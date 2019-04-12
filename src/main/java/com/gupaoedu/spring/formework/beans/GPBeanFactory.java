@@ -1,11 +1,11 @@
-package com.gupaoedu.spring.formework.core;
+package com.gupaoedu.spring.formework.beans;
 
 /**
  * Created with IntelliJ IDEA.
  * User: MiaoYongchang
  * Date: 2019/4/12
  * Time: 13:26
- * Description: No Description
+ * Description: 单列工厂顶层设计
  */
 public interface GPBeanFactory {
     /**

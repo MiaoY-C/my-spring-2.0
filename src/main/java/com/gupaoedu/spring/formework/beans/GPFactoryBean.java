@@ -1,4 +1,4 @@
-package com.gupaoedu.spring.formework.core;
+package com.gupaoedu.spring.formework.beans;
 
 /**
  * Created with IntelliJ IDEA.
