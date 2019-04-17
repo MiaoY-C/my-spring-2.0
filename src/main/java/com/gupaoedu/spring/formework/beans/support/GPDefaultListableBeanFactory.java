@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentMap;
 public class GPDefaultListableBeanFactory extends GPAbstactApplicationContext {
 
     //存储注册信息的beanDefinition
-    private final Map<String, GPBeanDefinition> beanDefinitionMap = new ConcurrentHashMap<String,GPBeanDefinition>();
+    protected final Map<String, GPBeanDefinition> beanDefinitionMap = new ConcurrentHashMap<String,GPBeanDefinition>();
 
 
 }

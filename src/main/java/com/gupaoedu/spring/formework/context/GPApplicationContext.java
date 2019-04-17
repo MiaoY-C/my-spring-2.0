@@ -6,6 +6,7 @@ import com.gupaoedu.spring.formework.beans.support.GPBeanDefinitionReader;
 import com.gupaoedu.spring.formework.beans.support.GPDefaultListableBeanFactory;
 
 import java.util.List;
+import java.util.Map;
 
 public class GPApplicationContext extends GPDefaultListableBeanFactory implements GPBeanFactory {
 
@@ -34,14 +35,46 @@ public class GPApplicationContext extends GPDefaultListableBeanFactory implement
         doAutowrited();
     }
 
+    /**
+     * 只处理非延迟加载情况
+     */
     private void doAutowrited() {
+
+        //遍历beanDefintionMap,判断是否是延迟加载
+        for (Map.Entry<String, GPBeanDefinition> beanDefinitionEntry : super.beanDefinitionMap.entrySet()) {
+            String beanName = beanDefinitionEntry.getKey();
+            if(!beanDefinitionEntry.getValue().isLazyinit()){
+                getBean(beanName);
+            }
+        }
+
     }
 
     private void doRegisterBeanDefintion(List<GPBeanDefinition> beanDefintions) {
+        //放入到Map中
+        for(GPBeanDefinition beanDefinition : beanDefintions){
+            super.beanDefinitionMap.put(beanDefinition.getFactoryBeanName(),beanDefinition);
+        }
     }
 
     @Override
     public Object getBean(String beanName) {
+        /**
+         *  为什么会分两步,这里是防止循环注入
+         *  class A{B b};
+         *  class B{A a};
+         */
+
+        //1.初始化
+        instantiateBean(beanName,new GPBeanDefinition());
+        //2.注入
+        populateBean(beanName,new GPBeanDefinition());
         return null;
+    }
+
+    private void populateBean(String beanName, GPBeanDefinition gpBeanDefinition) {
+    }
+
+    private void instantiateBean(String beanName, GPBeanDefinition gpBeanDefinition) {
     }
 }
