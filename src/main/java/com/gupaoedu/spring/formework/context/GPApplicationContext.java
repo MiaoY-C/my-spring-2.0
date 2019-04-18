@@ -1,18 +1,23 @@
 package com.gupaoedu.spring.formework.context;
 
 import com.gupaoedu.spring.formework.beans.GPBeanFactory;
+import com.gupaoedu.spring.formework.beans.GPBeanWrapper;
 import com.gupaoedu.spring.formework.beans.config.GPBeanDefinition;
 import com.gupaoedu.spring.formework.beans.support.GPBeanDefinitionReader;
 import com.gupaoedu.spring.formework.beans.support.GPDefaultListableBeanFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class GPApplicationContext extends GPDefaultListableBeanFactory implements GPBeanFactory {
 
     private String[] configLocation;
 
     private GPBeanDefinitionReader reader;
+
+    //单例的IOC容器
+    private Map<String,Object> singletonObjects = new ConcurrentHashMap<String,Object>();
 
     public GPApplicationContext(String... configLocation){
         this.configLocation = configLocation;
@@ -64,17 +69,39 @@ public class GPApplicationContext extends GPDefaultListableBeanFactory implement
          *  class A{B b};
          *  class B{A a};
          */
-
         //1.初始化
-        instantiateBean(beanName,new GPBeanDefinition());
-        //2.注入
-        populateBean(beanName,new GPBeanDefinition());
+        GPBeanWrapper beanWrapper = instantiateBean(beanName,new GPBeanDefinition());
+
+        //2.拿到BeanWrapper之后保存到IOC容器中
+
+        //3.注入
+        populateBean(beanName,new GPBeanDefinition(),beanWrapper);
         return null;
     }
 
-    private void populateBean(String beanName, GPBeanDefinition gpBeanDefinition) {
+    private void populateBean(String beanName, GPBeanDefinition gpBeanDefinition, GPBeanWrapper beanWrapper) {
     }
 
-    private void instantiateBean(String beanName, GPBeanDefinition gpBeanDefinition) {
+    private GPBeanWrapper instantiateBean(String beanName, GPBeanDefinition beanDefinition) {
+        //1.拿到实例化对象得类名
+        String className = beanDefinition.getBeanClassName();
+        //2.反射进行初始化
+        Object instance = null;
+        try {
+            if(this.singletonObjects.containsKey(className)){
+                instance = this.singletonObjects.get(className);
+            }else{
+                Class<?> clazz = Class.forName(className);
+                instance = clazz.newInstance();
+                this.singletonObjects.put(className,instance);
+                this.singletonObjects.put(beanName,instance);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //3.把对象封装到BeanWrapper中
+        GPBeanWrapper beanWrapper = new GPBeanWrapper(instance);
+        return beanWrapper;
     }
 }

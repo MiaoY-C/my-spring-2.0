@@ -8,12 +8,22 @@ package com.gupaoedu.spring.formework.beans;
  * Description: No Description
  */
 public class GPBeanWrapper {
+    //对象实例
+    private Object wrappedInstance;
+
+    private Class<?> wrappedClass;
+
+    public GPBeanWrapper(Object wrappedInstance){
+        this.wrappedInstance = wrappedInstance;
+    };
+
+
     /**
      * 是单例直接拿到
      * @return
      */
     public Object getWrapperedInstance(){
-        return  null;
+        return  this.wrappedInstance;
     }
 
     /**
@@ -21,6 +31,6 @@ public class GPBeanWrapper {
      * @return
      */
     public Class<?> getWrappedClass(){
-        return  null;
+        return  this.wrappedInstance.getClass();
     }
 }
