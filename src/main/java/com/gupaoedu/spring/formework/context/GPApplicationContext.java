@@ -1,11 +1,16 @@
 package com.gupaoedu.spring.formework.context;
 
+import com.gupaoedu.spring.formework.annotation.GPAutowired;
+import com.gupaoedu.spring.formework.annotation.GPController;
+import com.gupaoedu.spring.formework.annotation.GPService;
 import com.gupaoedu.spring.formework.beans.GPBeanFactory;
 import com.gupaoedu.spring.formework.beans.GPBeanWrapper;
 import com.gupaoedu.spring.formework.beans.config.GPBeanDefinition;
 import com.gupaoedu.spring.formework.beans.support.GPBeanDefinitionReader;
 import com.gupaoedu.spring.formework.beans.support.GPDefaultListableBeanFactory;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,6 +23,8 @@ public class GPApplicationContext extends GPDefaultListableBeanFactory implement
 
     //单例的IOC容器
     private Map<String,Object> singletonObjects = new ConcurrentHashMap<String,Object>();
+
+    private Map<String,GPBeanWrapper>  factoryBeanInstanceCache = new ConcurrentHashMap<String, GPBeanWrapper>();
 
     public GPApplicationContext(String... configLocation){
         this.configLocation = configLocation;
@@ -48,9 +55,14 @@ public class GPApplicationContext extends GPDefaultListableBeanFactory implement
         //遍历beanDefintionMap,判断是否是延迟加载
         for (Map.Entry<String, GPBeanDefinition> beanDefinitionEntry : super.beanDefinitionMap.entrySet()) {
             String beanName = beanDefinitionEntry.getKey();
-            if(!beanDefinitionEntry.getValue().isLazyinit()){
-                getBean(beanName);
+            try{
+                if(!beanDefinitionEntry.getValue().isLazyinit()){
+                    getBean(beanName);
+                }
+            }catch (Exception e){
+                e.printStackTrace();
             }
+
         }
 
     }
@@ -63,7 +75,7 @@ public class GPApplicationContext extends GPDefaultListableBeanFactory implement
     }
 
     @Override
-    public Object getBean(String beanName) {
+    public Object getBean(String beanName) throws Exception {
         /**
          *  为什么会分两步,这里是防止循环注入
          *  class A{B b};
@@ -73,13 +85,53 @@ public class GPApplicationContext extends GPDefaultListableBeanFactory implement
         GPBeanWrapper beanWrapper = instantiateBean(beanName,new GPBeanDefinition());
 
         //2.拿到BeanWrapper之后保存到IOC容器中
+//        if(this.factoryBeanInstanceCache.containsKey(beanName)){
+//            throw new Exception("The" + beanName +"is exists");
+//        }
+        this.factoryBeanInstanceCache.put(beanName,beanWrapper);
 
         //3.注入
         populateBean(beanName,new GPBeanDefinition(),beanWrapper);
-        return null;
+
+        return this.factoryBeanInstanceCache.get(beanName).getWrapperedInstance();
     }
 
+    /**
+     * 依赖注入
+     * @param beanName
+     * @param gpBeanDefinition
+     * @param beanWrapper
+     */
     private void populateBean(String beanName, GPBeanDefinition gpBeanDefinition, GPBeanWrapper beanWrapper) {
+        Object instance = beanWrapper.getWrapperedInstance();//实例
+        Class<?> clazz = beanWrapper.getWrappedClass();//类对象
+        //判断是否包含扫描注解
+        if(!clazz.isAnnotationPresent(GPService.class)
+                 || !clazz.isAnnotationPresent(GPController.class)){return;};
+        //扫描字段并注入
+        //获取所有的字段
+        Field[] fields = clazz.getDeclaredFields();
+        for (Field field : fields) {
+            if(!field.isAnnotationPresent(GPAutowired.class)){continue;}
+            //获取自定义值
+            GPAutowired autowired = field.getAnnotation(GPAutowired.class);
+            String autowiredBeanName = autowired.value();
+            if("".equals(autowiredBeanName)){
+                //若没有自定义值则用字段的类型全类名
+                autowiredBeanName = field.getType().getName();
+            }
+            //强制访问
+            field.setAccessible(true);
+
+            try {
+                //set实例和类型
+                field.set(instance,this.factoryBeanInstanceCache.get(autowiredBeanName).getWrappedClass());
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+
+        }
+
     }
 
     private GPBeanWrapper instantiateBean(String beanName, GPBeanDefinition beanDefinition) {

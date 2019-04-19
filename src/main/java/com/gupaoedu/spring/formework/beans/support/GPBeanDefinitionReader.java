@@ -74,31 +74,47 @@ public class GPBeanDefinitionReader {
     public List<GPBeanDefinition> loadBeanDefintions(){
 
         List<GPBeanDefinition> result = new ArrayList<GPBeanDefinition>();
-        for (String beanClass : registyBeanClasses) {
-            //封装beanDefintion
-            GPBeanDefinition beanDefinition = doCreateBeanDefintion(beanClass);
-            if(beanDefinition == null){
-                continue;
-            }
-            result.add(beanDefinition);
-        }
-
-        return result;
-    }
-
-    private GPBeanDefinition doCreateBeanDefintion(String className) {
         try{
-            Class<?> beanClass = Class.forName(className);
-            if(beanClass.isInterface()){return null;}//如果是接口直接返回
-            GPBeanDefinition beanDefinition = new GPBeanDefinition();
-            beanDefinition.setBeanClassName(className);
-            beanDefinition.setFactoryBeanName(toLowerFirstCase(beanClass.getSimpleName()));
-            return beanDefinition;
+            for (String className : registyBeanClasses) {
+
+                Class<?> beanClass = Class.forName(className);
+
+                //如果是接口直接返回,接口不能被实例化
+                if(beanClass.isInterface()){ continue; }
+
+
+                //封装beanDefintion
+                GPBeanDefinition beanDefinition = doCreateBeanDefinition(toLowerFirstCase(beanClass.getSimpleName()),className);
+
+                result.add(beanDefinition);
+
+                for (Class<?> classInterface : beanClass.getInterfaces()) {
+                    //如果是多个实现类，只能覆盖
+                    //为什么？因为Spring没那么智能，就是这么傻
+                    //这个时候，可以自定义名字
+                    result.add(doCreateBeanDefinition(classInterface.getName(),beanClass.getName()));
+                }
+
+            }
         }catch (Exception e){
             e.printStackTrace();
         }
+        return result;
+    }
 
-        return null;
+    /**
+     * 创建GPBeanDefintion
+     * @param factoryBeanName 简单类名首字母小写
+     * @param beanClassName 全类名
+     * @return GPBeanDefinition
+     */
+    private GPBeanDefinition doCreateBeanDefinition(String factoryBeanName,String beanClassName) {
+
+            GPBeanDefinition beanDefinition = new GPBeanDefinition();
+            beanDefinition.setBeanClassName(factoryBeanName);
+            beanDefinition.setFactoryBeanName(beanClassName);
+            return beanDefinition;
+
     }
 
     private String toLowerFirstCase(String className) {
