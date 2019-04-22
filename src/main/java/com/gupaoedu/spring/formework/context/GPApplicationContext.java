@@ -81,8 +81,9 @@ public class GPApplicationContext extends GPDefaultListableBeanFactory implement
          *  class A{B b};
          *  class B{A a};
          */
+        GPBeanDefinition beanDefinition = this.beanDefinitionMap.get(beanName);
         //1.初始化
-        GPBeanWrapper beanWrapper = instantiateBean(beanName,new GPBeanDefinition());
+        GPBeanWrapper beanWrapper = instantiateBean(beanName,beanDefinition);
 
         //2.拿到BeanWrapper之后保存到IOC容器中
 //        if(this.factoryBeanInstanceCache.containsKey(beanName)){
@@ -125,7 +126,10 @@ public class GPApplicationContext extends GPDefaultListableBeanFactory implement
 
             try {
                 //set实例和类型
-                field.set(instance,this.factoryBeanInstanceCache.get(autowiredBeanName).getWrappedClass());
+                if(this.factoryBeanInstanceCache.get(autowiredBeanName) == null){
+                    continue;
+                }
+                field.set(instance,this.factoryBeanInstanceCache.get(autowiredBeanName).getWrapperedInstance());
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }

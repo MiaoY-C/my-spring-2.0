@@ -22,7 +22,7 @@ public class GPBeanDefinitionReader {
     private final String SCAN_PACKAGE = "scanPackage";
 
     //存放类名
-    private List<String> registyBeanClasses = new ArrayList<>();
+    private List<String> registyBeanClasses = new ArrayList<String>();
 
     public GPBeanDefinitionReader(String... location){
         this.location = location;
@@ -46,8 +46,8 @@ public class GPBeanDefinitionReader {
     }
 
     private void doSacnner(String scanPackage) {
-        //转换为文件路径,实际上就是把.替换为/
-        URL url  = this.getClass().getClassLoader().getResource("/"+scanPackage.replaceAll(".","/"));
+        //转换为文件路径,实际上就是把.替换为/.getClassLoader()
+        URL url  = this.getClass().getResource("/"+scanPackage.replaceAll(".","/"));
         String filePath = url.getFile();
         File classPath = new File(filePath);
         for (File file : classPath.listFiles()) {
