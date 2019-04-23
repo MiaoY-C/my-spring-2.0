@@ -26,8 +26,8 @@ public class GPBeanDefinitionReader {
 
     public GPBeanDefinitionReader(String... location){
         this.location = location;
-        //定位URL路径找到配置文件并将其加载到Properties对象中
-        InputStream is = this.getClass().getClassLoader().getResourceAsStream(location[0].replace("classpath",""));
+        //定位URL路径找到配置文件并将其加载到Properties对象中.getClassLoader()
+        InputStream is = this.getClass().getClassLoader().getResourceAsStream(location[0].replace("classpath:",""));
         try {
             config.load(is);
         } catch (IOException e) {
@@ -47,14 +47,14 @@ public class GPBeanDefinitionReader {
 
     private void doSacnner(String scanPackage) {
         //转换为文件路径,实际上就是把.替换为/.getClassLoader()
-        URL url  = this.getClass().getResource("/"+scanPackage.replaceAll(".","/"));
+        URL url  = this.getClass().getResource("/"+scanPackage.replaceAll("\\.","/"));
         String filePath = url.getFile();
         File classPath = new File(filePath);
         for (File file : classPath.listFiles()) {
             if(file.isDirectory()){//如果是文件夹,递归调用
                 doSacnner(scanPackage+"."+file.getName());
             }else{
-                if(file.getName().endsWith(".class")){continue;}
+                if(!file.getName().endsWith(".class")){continue;}
 
                 String className = (scanPackage + "." +file.getName()).replace(".class","");
                 registyBeanClasses.add(className);
@@ -111,8 +111,8 @@ public class GPBeanDefinitionReader {
     private GPBeanDefinition doCreateBeanDefinition(String factoryBeanName,String beanClassName) {
 
             GPBeanDefinition beanDefinition = new GPBeanDefinition();
-            beanDefinition.setBeanClassName(factoryBeanName);
-            beanDefinition.setFactoryBeanName(beanClassName);
+            beanDefinition.setBeanClassName(beanClassName);
+            beanDefinition.setFactoryBeanName(factoryBeanName);
             return beanDefinition;
 
     }
