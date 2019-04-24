@@ -6,6 +6,7 @@ import com.gupaoedu.spring.formework.annotation.GPService;
 import com.gupaoedu.spring.formework.beans.GPBeanFactory;
 import com.gupaoedu.spring.formework.beans.GPBeanWrapper;
 import com.gupaoedu.spring.formework.beans.config.GPBeanDefinition;
+import com.gupaoedu.spring.formework.beans.config.GPBeanPostProcessor;
 import com.gupaoedu.spring.formework.beans.support.GPBeanDefinitionReader;
 import com.gupaoedu.spring.formework.beans.support.GPDefaultListableBeanFactory;
 
@@ -73,6 +74,9 @@ public class GPApplicationContext extends GPDefaultListableBeanFactory implement
             super.beanDefinitionMap.put(beanDefinition.getFactoryBeanName(),beanDefinition);
         }
     }
+    public Object getBean(Class<?> clazz) throws Exception {
+        return getBean(clazz.getName());
+    }
 
     @Override
     public Object getBean(String beanName) throws Exception {
@@ -83,15 +87,22 @@ public class GPApplicationContext extends GPDefaultListableBeanFactory implement
          */
         GPBeanDefinition beanDefinition = this.beanDefinitionMap.get(beanName);
         //1.初始化
-        GPBeanWrapper beanWrapper = instantiateBean(beanName,beanDefinition);
+        Object instance = instantiateBean(beanName,beanDefinition);
 
-        //2.拿到BeanWrapper之后保存到IOC容器中
+        //初始化前后通知  实际上时是应该根据instance是否实现InitAware来判断是否需要创建通知
+        GPBeanPostProcessor postProcessor = new GPBeanPostProcessor();
+        postProcessor.postProcessBeforInitialization(instance,beanName);
+
+        //2.把对象封装到BeanWrapper中
+        GPBeanWrapper beanWrapper = new GPBeanWrapper(instance);
+
+        //3.拿到BeanWrapper之后保存到IOC容器中
 //        if(this.factoryBeanInstanceCache.containsKey(beanName)){
 //            throw new Exception("The" + beanName +"is exists");
 //        }
         this.factoryBeanInstanceCache.put(beanName,beanWrapper);
-
-        //3.注入
+        postProcessor.postProcessAfterInitialization(instance,beanName);
+        //4.注入
         populateBean(beanName,new GPBeanDefinition(),beanWrapper);
 
         return this.factoryBeanInstanceCache.get(beanName).getWrapperedInstance();
@@ -138,7 +149,7 @@ public class GPApplicationContext extends GPDefaultListableBeanFactory implement
 
     }
 
-    private GPBeanWrapper instantiateBean(String beanName, GPBeanDefinition beanDefinition) {
+    private Object instantiateBean(String beanName, GPBeanDefinition beanDefinition) {
         //1.拿到实例化对象得类名
         String className = beanDefinition.getBeanClassName();
         //2.反射进行初始化
@@ -156,8 +167,7 @@ public class GPApplicationContext extends GPDefaultListableBeanFactory implement
         } catch (Exception e) {
             e.printStackTrace();
         }
-        //3.把对象封装到BeanWrapper中
-        GPBeanWrapper beanWrapper = new GPBeanWrapper(instance);
-        return beanWrapper;
+
+        return instance;
     }
 }

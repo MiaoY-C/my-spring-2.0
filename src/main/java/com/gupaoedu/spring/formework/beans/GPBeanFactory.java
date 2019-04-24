@@ -14,4 +14,6 @@ public interface GPBeanFactory {
      * @return
      */
     Object getBean(String beanName) throws Exception;
+
+    Object getBean(Class<?> clazz) throws Exception;
 }

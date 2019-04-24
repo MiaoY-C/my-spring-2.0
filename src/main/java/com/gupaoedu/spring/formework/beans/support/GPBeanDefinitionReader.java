@@ -87,6 +87,7 @@ public class GPBeanDefinitionReader {
                 GPBeanDefinition beanDefinition = doCreateBeanDefinition(toLowerFirstCase(beanClass.getSimpleName()),className);
 
                 result.add(beanDefinition);
+                result.add(doCreateBeanDefinition(className,className));
 
                 for (Class<?> classInterface : beanClass.getInterfaces()) {
                     //如果是多个实现类，只能覆盖

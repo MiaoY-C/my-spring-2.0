@@ -13,6 +13,7 @@ import java.lang.annotation.*;
 public @interface GPRequestParam {
 	
 	String value() default "";
+
 	
 	boolean required() default true;
 
